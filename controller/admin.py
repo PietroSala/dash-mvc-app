@@ -3,7 +3,6 @@ import dash
 from dash.dependencies import Input, Output, State, ALL
 import dash_bootstrap_components as dbc
 from pony.orm import db_session
-import re
 import json
 from flask_login import current_user
 
@@ -26,142 +25,93 @@ def register_admin_callbacks(app):
             return create_users_table(users)
         return ''
     
-    # Callback to handle clicks on table actions
+    # Callback to enable/disable action buttons based on row selection
     @app.callback(
-        [Output('delete-user-modal', 'is_open'),
-        Output('selected-user-id', 'data')],
-        [Input('users-table', 'active_cell')],
-        [State('users-table', 'data')],
-        prevent_initial_call=True
+        [Output('delete-selected-button', 'disabled'),
+         Output('promote-selected-button', 'disabled'),
+         Output('selected-user-id', 'data')],
+        [Input('users-table', 'selected_rows')],
+        [State('users-table', 'data')]
     )
-    def toggle_delete_modal(active_cell, table_data):
-        """Handle clicks on the delete link in the users table"""
-        if not active_cell or active_cell['column_id'] != 'actions':
-            return False, dash.no_update
+    def update_action_buttons(selected_rows, table_data):
+        if not selected_rows:
+            return True, True, None
         
-        row_id = active_cell['row']
-        action_text = table_data[row_id]['actions']
+        selected_row = selected_rows[0]  # Get the first selected row
+        selected_user = table_data[selected_row]
+        selected_user_id = selected_user['id']
+        is_admin = selected_user['type'] == 'Admin'
+        is_current_user = current_user.id == selected_user_id
         
-        # Check if this cell contains a delete link
-        delete_match = re.search(r'\[Delete User\]\(delete-(\d+)\)', action_text)
-        if delete_match:
-            user_id = int(delete_match.group(1))
-            return True, user_id
-        
-        return False, dash.no_update
-
-    @app.callback(
-        [Output('promote-user-modal', 'is_open', allow_duplicate=True),
-        Output('selected-user-id', 'data', allow_duplicate=True)],
-        [Input('users-table', 'active_cell')],
-        [State('users-table', 'data')],
-        prevent_initial_call=True
-    )
-    def toggle_promote_modal(active_cell, table_data):
-        """Handle clicks on the promote link in the users table"""
-        if not active_cell or active_cell['column_id'] != 'actions':
-            return False, dash.no_update
-        
-        row_id = active_cell['row']
-        action_text = table_data[row_id]['actions']
-        
-        # Check if this cell contains a promote link
-        promote_match = re.search(r'\[Promote to Admin\]\(promote-(\d+)\)', action_text)
-        if promote_match:
-            user_id = int(promote_match.group(1))
-            return True, user_id
-        
-        return False, dash.no_update
-
-    # Store selected user ID for delete action
-    @app.callback(
-        Output('selected-user-id', 'data', allow_duplicate=True),
-        Input({'type': 'delete-button', 'index': ALL}, 'n_clicks'),
-        prevent_initial_call=True
-    )
-    def store_selected_user_id(delete_clicks):
-        ctx = dash.callback_context
-        if not ctx.triggered:
-            return dash.no_update
+        # Both buttons disabled if current user is selected
+        if is_current_user:
+            return True, True, selected_user_id
             
-        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-        try:
-            button_data = json.loads(button_id)
-            return button_data['index']
-        except:
-            return dash.no_update
+        # Promote button disabled if user is already admin
+        return False, is_admin, selected_user_id
     
     # Delete user callback
     @app.callback(
-        Output('admin-message', 'children'),
-        Input('confirm-delete-user', 'n_clicks'),
-        State('selected-user-id', 'data'),
+        [Output('delete-user-modal', 'is_open'),
+         Output('admin-message', 'children', allow_duplicate=True)],
+        [Input('delete-selected-button', 'n_clicks'),
+         Input('confirm-delete-user', 'n_clicks'),
+         Input('cancel-delete-user', 'n_clicks')],
+        [State('delete-user-modal', 'is_open'),
+         State('selected-user-id', 'data')],
         prevent_initial_call=True
     )
     @db_session
-    def delete_user_callback(n_clicks, user_id):
-        if not n_clicks or not user_id:
-            return dash.no_update
-            
-        if delete_user(user_id):
-            return dbc.Alert('User deleted successfully', color='success')
-        else:
-            return dbc.Alert('Failed to delete user', color='danger')
-    
-    # Toggle promote user modal
-    @app.callback(
-        Output('promote-user-modal', 'is_open'),
-        [Input({'type': 'promote-button', 'index': ALL}, 'n_clicks'),
-         Input('confirm-promote-user', 'n_clicks'),
-         Input('cancel-promote-user', 'n_clicks')],
-        [State('promote-user-modal', 'is_open')]
-    )
-    def toggle_promote_modal(promote_clicks, confirm, cancel, is_open):
+    def handle_delete_user(delete_clicks, confirm_clicks, cancel_clicks, is_open, user_id):
         ctx = dash.callback_context
         if not ctx.triggered:
-            return is_open
+            return is_open, dash.no_update
             
-        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
         
-        if button_id == 'confirm-promote-user' or button_id == 'cancel-promote-user':
-            return False
+        if trigger_id == 'delete-selected-button' and delete_clicks:
+            return True, dash.no_update
             
-        if any(promote_clicks):
-            return True
+        if trigger_id == 'cancel-delete-user':
+            return False, dash.no_update
             
-        return is_open
-    
-    # Store selected user ID for promote action
-    @app.callback(
-        Output('selected-user-id', 'data', allow_duplicate=True),
-        Input({'type': 'promote-button', 'index': ALL}, 'n_clicks'),
-        prevent_initial_call=True
-    )
-    def store_promoted_user_id(promote_clicks):
-        ctx = dash.callback_context
-        if not ctx.triggered:
-            return dash.no_update
-            
-        button_id = ctx.triggered[0]['prop_id'].split('.')[0]
-        try:
-            button_data = json.loads(button_id)
-            return button_data['index']
-        except:
-            return dash.no_update
+        if trigger_id == 'confirm-delete-user' and confirm_clicks:
+            if user_id and delete_user(user_id):
+                return False, dbc.Alert('User deleted successfully', color='success')
+            else:
+                return False, dbc.Alert('Failed to delete user', color='danger')
+                
+        return is_open, dash.no_update
     
     # Promote user callback
     @app.callback(
-        Output('admin-message', 'children', allow_duplicate=True),
-        Input('confirm-promote-user', 'n_clicks'),
-        State('selected-user-id', 'data'),
+        [Output('promote-user-modal', 'is_open'),
+         Output('admin-message', 'children', allow_duplicate=True)],
+        [Input('promote-selected-button', 'n_clicks'),
+         Input('confirm-promote-user', 'n_clicks'),
+         Input('cancel-promote-user', 'n_clicks')],
+        [State('promote-user-modal', 'is_open'),
+         State('selected-user-id', 'data')],
         prevent_initial_call=True
     )
     @db_session
-    def promote_user_callback(n_clicks, user_id):
-        if not n_clicks or not user_id:
-            return dash.no_update
+    def handle_promote_user(promote_clicks, confirm_clicks, cancel_clicks, is_open, user_id):
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            return is_open, dash.no_update
             
-        if promote_user_to_admin(user_id):
-            return dbc.Alert('User promoted to admin successfully', color='success')
-        else:
-            return dbc.Alert('Failed to promote user', color='danger')
+        trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
+        
+        if trigger_id == 'promote-selected-button' and promote_clicks:
+            return True, dash.no_update
+            
+        if trigger_id == 'cancel-promote-user':
+            return False, dash.no_update
+            
+        if trigger_id == 'confirm-promote-user' and confirm_clicks:
+            if user_id and promote_user_to_admin(user_id):
+                return False, dbc.Alert('User promoted to admin successfully', color='success')
+            else:
+                return False, dbc.Alert('Failed to promote user', color='danger')
+                
+        return is_open, dash.no_update

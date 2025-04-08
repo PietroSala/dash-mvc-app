@@ -70,7 +70,7 @@ def delete_user(user_id):
     user = get_user(user_id)
     if user:
         # Projects managed by this user will be automatically deleted due to cascade_delete
-        delete(user)
+        user.delete()
         return True
     return False
 
