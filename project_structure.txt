@@ -1,0 +1,26 @@
+project/
+├── mvc_app.py            # Main application entry point
+├── controller/           # Controller module
+│   ├── __init__.py
+│   ├── callbacks.py
+│   ├── auth.py
+│   ├── admin.py
+│   ├── projects.py
+│   └── routing.py
+├── model/                # Model module
+│   ├── __init__.py
+│   ├── database.py
+│   ├── user.py
+│   ├── project.py
+│   └── operations.py
+├── view/                 # View module
+│   ├── __init__.py
+│   ├── layout.py
+│   ├── auth.py
+│   ├── navigation.py
+│   ├── admin.py
+│   ├── projects.py
+│   ├── modals.py
+│   └── components.py
+└── data/                 # Data directory
+    └── app_database.sqlite
