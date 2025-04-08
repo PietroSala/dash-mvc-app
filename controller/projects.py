@@ -20,14 +20,17 @@ def register_project_callbacks(app):
     """Register project management related callbacks"""
     
     # Load projects data
+    # Modify the load_projects callback to include the refresh button as an input
     @app.callback(
         [Output('managed-projects-container', 'children'),
-         Output('member-projects-container', 'children')],
-        [Input('url', 'pathname')]
+        Output('member-projects-container', 'children')],
+        [Input('url', 'pathname'),
+        Input('refresh-projects-button', 'n_clicks')]
     )
     @db_session
-    def load_projects(pathname):
-        if pathname != '/projects' or not current_user.is_authenticated:
+    def load_projects(pathname, n_clicks):
+        # Check if we're on the projects page or a refresh was clicked
+        if (pathname != '/projects' and not n_clicks) or not current_user.is_authenticated:
             return dash.no_update, dash.no_update
             
         # Get projects the user manages
@@ -95,10 +98,10 @@ def register_project_callbacks(app):
     
     # Create new project
     @app.callback(
-        Output('project-message', 'children'),
-        [Input('confirm-create-project', 'n_clicks')],
-        [State('project-name', 'value'),
-         State('project-start-date', 'value')]
+    Output('project-message', 'children'),
+    [Input('confirm-create-project', 'n_clicks')],
+    [State('project-name', 'value'),
+     State('project-start-date', 'value')]
     )
     @db_session
     def create_new_project(n_clicks, name, start_date):
@@ -107,7 +110,10 @@ def register_project_callbacks(app):
             
         start_date_obj = datetime.strptime(start_date, '%Y-%m-%d').date()
         
+        print(f"Creating project: {name}, {start_date_obj}, {current_user.id}")
         project_id = create_project(name, start_date_obj, current_user.id)
+        print(f"Project creation result: {project_id}")
+        
         if project_id:
             return dbc.Alert('Project created successfully', color='success')
         else:

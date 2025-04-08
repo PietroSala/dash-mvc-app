@@ -21,7 +21,8 @@ def get_projects_layout():
                 dbc.Button('Create New Project', id='create-project-button', color='success', className='me-2'),
                 dbc.Button('View Details', id='view-project-button', color='primary', className='me-2', disabled=True),
                 dbc.Button('Add Member', id='add-member-button', color='info', className='me-2', disabled=True),
-                dbc.Button('Close Project', id='close-project-button', color='warning', disabled=True),
+                dbc.Button('Close Project', id='close-project-button', color='warning', className='me-2', disabled=True),
+                dbc.Button('Refresh', id='refresh-projects-button', color='secondary', className='me-2'),
             ], width=12, className='mb-3')
         ]),
         

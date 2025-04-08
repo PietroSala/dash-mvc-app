@@ -1,5 +1,5 @@
 # model/operations.py
-from pony.orm import db_session, select, delete
+from pony.orm import db_session, select, delete, commit
 from werkzeug.security import generate_password_hash
 from datetime import date
 
@@ -87,6 +87,9 @@ def create_project(name, start_date, manager_id):
         start_date=start_date,
         manager=manager
     )
+
+    commit()
+
     return project.id
 
 @db_session
