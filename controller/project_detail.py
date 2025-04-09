@@ -12,7 +12,7 @@ from flask_login import current_user
 from model import (
     get_project, add_member_to_project,
     remove_member_from_project, close_project, list_all_users,
-    delete_project
+    delete_project, update_dot_graph
 )
 
 def register_project_detail_callbacks(app):
@@ -208,3 +208,185 @@ def register_project_detail_callbacks(app):
                         return dbc.Alert('Failed to remove member', color='danger')
         except:
             return dbc.Alert('An error occurred', color='danger')
+    
+    # Save DOT graph changes
+    @app.callback(
+        Output('dot-graph-message', 'children'),
+        [Input('save-dot-graph', 'n_clicks')],
+        [State('dot-editor', 'value'),
+         State('selected-project-id', 'data')],
+        prevent_initial_call=True
+    )
+    @db_session
+    def save_dot_graph(n_clicks, dot_graph, project_id):
+        if not n_clicks or not project_id:
+            return dash.no_update
+            
+        if update_dot_graph(project_id, current_user.id, dot_graph):
+            return dbc.Alert('Graph saved successfully', color='success')
+        else:
+            return dbc.Alert('Failed to save graph', color='danger')
+    
+    # Revert DOT graph to saved version
+    @app.callback(
+        Output('dot-editor', 'value'),
+        [Input('revert-dot-graph', 'n_clicks')],
+        [State('selected-project-id', 'data')],
+        prevent_initial_call=True
+    )
+    @db_session
+    def revert_dot_graph(n_clicks, project_id):
+        if not n_clicks or not project_id:
+            return dash.no_update
+            
+        project = get_project(project_id)
+        if project and hasattr(project, 'dot_graph'):
+            return project.dot_graph
+            
+        return dash.no_update
+    
+    # Generate and display DOT graph
+    @app.callback(
+        Output('dot-graph-visualization', 'children'),
+        [Input('generate-dot-graph', 'n_clicks')],
+        [State('dot-editor', 'value')],
+        prevent_initial_call=True
+    )
+    def generate_dot_graph(n_clicks, dot_graph):
+        import tempfile
+        import base64
+        import os
+        import subprocess
+        
+        if not n_clicks or not dot_graph:
+            return dash.no_update
+            
+        # Create a temporary dot file
+        try:
+            # Create temporary files for input and output
+            with tempfile.NamedTemporaryFile(suffix='.dot', delete=False) as dot_file:
+                dot_file_path = dot_file.name
+                dot_file.write(dot_graph.encode('utf-8'))
+            
+            png_file_path = dot_file_path + '.png'
+            
+            # Use subprocess to call GraphViz directly
+            cmd = ['dot', '-Tpng', dot_file_path, '-o', png_file_path]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode != 0:
+                return [
+                    html.P(f"Error: {result.stderr}", className="text-danger"),
+                    html.Pre(
+                        dot_graph,
+                        style={
+                            'background-color': '#f8f9fa', 
+                            'padding': '10px', 
+                            'border-radius': '5px',
+                            'overflow': 'auto',
+                            'max-height': '300px',
+                            'text-align': 'left'
+                        }
+                    )
+                ]
+            
+            # Read the generated PNG file
+            with open(png_file_path, 'rb') as f:
+                img_data = f.read()
+            
+            # Clean up temporary files
+            try:
+                os.unlink(dot_file_path)
+                os.unlink(png_file_path)
+            except:
+                pass
+            
+            # Encode the image data
+            encoded_image = base64.b64encode(img_data).decode('ascii')
+            
+            return html.Img(
+                src=f'data:image/png;base64,{encoded_image}',
+                style={'max-width': '100%', 'max-height': '380px'},
+                className="mt-2"
+            )
+                
+        except Exception as e:
+            return [
+                html.P(f"Error generating graph: {str(e)}", className="text-danger"),
+                html.Pre(
+                    dot_graph,
+                    style={
+                        'background-color': '#f8f9fa', 
+                        'padding': '10px', 
+                        'border-radius': '5px',
+                        'overflow': 'auto',
+                        'max-height': '300px',
+                        'text-align': 'left'
+                    }
+                )
+            ]
+    
+    # Also update the graph on save or refresh
+    @app.callback(
+        Output('dot-graph-visualization', 'children', allow_duplicate=True),
+        [Input('save-dot-graph', 'n_clicks'),
+         Input('refresh-project-button', 'n_clicks')],
+        [State('selected-project-id', 'data')],
+        prevent_initial_call=True
+    )
+    @db_session
+    def update_graph_after_save(save_clicks, refresh_clicks, project_id):
+        import tempfile
+        import base64
+        import os
+        import subprocess
+        
+        ctx = dash.callback_context
+        if not ctx.triggered or not project_id:
+            return dash.no_update
+        
+        # Get project data
+        project = get_project(project_id)
+        if not project or not hasattr(project, 'dot_graph') or not project.dot_graph:
+            return dash.no_update
+            
+        dot_graph = project.dot_graph
+            
+        # Create a temporary dot file
+        try:
+            # Create temporary files for input and output
+            with tempfile.NamedTemporaryFile(suffix='.dot', delete=False) as dot_file:
+                dot_file_path = dot_file.name
+                dot_file.write(dot_graph.encode('utf-8'))
+            
+            png_file_path = dot_file_path + '.png'
+            
+            # Use subprocess to call GraphViz directly
+            cmd = ['dot', '-Tpng', dot_file_path, '-o', png_file_path]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode != 0:
+                return dash.no_update
+            
+            # Read the generated PNG file
+            with open(png_file_path, 'rb') as f:
+                img_data = f.read()
+            
+            # Clean up temporary files
+            try:
+                os.unlink(dot_file_path)
+                os.unlink(png_file_path)
+            except:
+                pass
+            
+            # Encode the image data
+            encoded_image = base64.b64encode(img_data).decode('ascii')
+            
+            return html.Img(
+                src=f'data:image/png;base64,{encoded_image}',
+                style={'max-width': '100%', 'max-height': '380px'},
+                className="mt-2"
+            )
+                
+        except Exception as e:
+            return dash.no_update

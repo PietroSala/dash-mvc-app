@@ -11,3 +11,4 @@ class Project(db.Entity):
     end_date = Optional(date)
     manager = Required("User", reverse="managed_projects")
     members = Set("User", reverse="member_of_projects")
+    dot_graph = Optional(str, default="digraph G {\n  A -> B;\n  B -> C;\n  C -> A;\n}")

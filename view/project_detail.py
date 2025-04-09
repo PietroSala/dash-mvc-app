@@ -1,6 +1,6 @@
 # view/project_detail.py
 
-from dash import html
+from dash import html, dcc
 import dash_bootstrap_components as dbc
 from flask_login import current_user
 from pony.orm import db_session
@@ -53,6 +53,47 @@ def get_project_detail_layout(project_id):
                 ])
             ], width=6)
         ]),
+        
+        # DOT Graph Editor Row
+        dbc.Row([
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardHeader([
+                        html.Span("DOT Graph Editor", className="me-2"),
+                        html.Small("Create diagrams using DOT language", className="text-muted")
+                    ]),
+                    dbc.CardBody([
+                        dcc.Textarea(
+                            id='dot-editor',
+                            value=project.dot_graph if hasattr(project, 'dot_graph') else "digraph G {\n  A -> B;\n  B -> C;\n  C -> A;\n}",
+                            style={'width': '100%', 'height': '200px', 'fontFamily': 'monospace'},
+                            className="mb-3"
+                        ),
+                        html.Div([
+                            dbc.Button("Save Changes", id="save-dot-graph", color="primary", className="me-2"),
+                            dbc.Button("Generate Graph", id="generate-dot-graph", color="success", className="me-2"),
+                            dbc.Button("Revert to Saved", id="revert-dot-graph", color="warning")
+                        ]) if project.manager.id == current_user.id else html.Div(),
+                        html.Div(id="dot-graph-message", className="mt-2")
+                    ])
+                ])
+            ], width=12)
+        ], className="mt-3"),
+        
+        # Graph visualization row
+        dbc.Row([
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardHeader("Graph Visualization"),
+                    dbc.CardBody([
+                        html.Div(
+                            id="dot-graph-visualization", 
+                            style={'height': '400px', 'textAlign': 'center', 'overflow': 'auto'}
+                        )
+                    ])
+                ])
+            ], width=12)
+        ], className="mt-3"),
         
         dbc.Row([
             dbc.Col([

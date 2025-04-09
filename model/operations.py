@@ -177,3 +177,20 @@ def delete_project(project_id, user_id):
     # Delete the project
     project.delete()
     return True
+
+@db_session
+def update_dot_graph(project_id, user_id, dot_graph_string):
+    """Update the DOT graph for a project (only if user is the manager)"""
+    project = get_project(project_id)
+    user = get_user(user_id)
+    
+    if not project or not user:
+        return False
+    
+    # Only the manager can update the project's DOT graph
+    if project.manager.id != user.id:
+        return False
+        
+    # Update the DOT graph
+    project.dot_graph = dot_graph_string
+    return True
