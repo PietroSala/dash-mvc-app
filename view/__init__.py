@@ -3,10 +3,8 @@ from .layout import get_app_layout
 from .auth import get_login_layout, get_register_layout
 from .layout import get_home_layout, get_dashboard_layout, get_profile_layout
 from .admin import get_admin_layout, create_users_table
-from .projects import (
-    get_projects_layout, get_project_detail_layout,
-    create_member_list, create_projects_table
-)
+from .projects import get_projects_layout, create_projects_table
+from .project_detail import get_project_detail_layout, create_member_list
 from .components import create_user_info_display
 from .navigation import get_navbar
 from .modals import (
