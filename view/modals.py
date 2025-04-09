@@ -84,3 +84,14 @@ def create_close_project_modal():
             dbc.Button("Close Project", id="confirm-close-project", color="warning"),
         ]),
     ], id="close-project-modal")
+
+def create_delete_project_modal():
+    """Creates a confirmation modal for deleting a project"""
+    return dbc.Modal([
+        dbc.ModalHeader("Confirm Project Deletion"),
+        dbc.ModalBody("Are you sure you want to delete this project? This action cannot be undone and all project data will be permanently lost."),
+        dbc.ModalFooter([
+            dbc.Button("Cancel", id="cancel-delete-project", className="ms-auto", color="secondary"),
+            dbc.Button("Delete", id="confirm-delete-project", color="danger"),
+        ]),
+    ], id="delete-project-modal")

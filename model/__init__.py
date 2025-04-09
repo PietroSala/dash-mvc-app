@@ -11,7 +11,7 @@ from .operations import (
     initialize_db, get_user, get_user_by_username, add_user, validate_user,
     list_all_users, promote_user_to_admin, delete_user, create_project,
     get_project, close_project, add_member_to_project, remove_member_from_project,
-    get_user_managed_projects, get_user_member_projects
+    get_user_managed_projects, get_user_member_projects, delete_project
 )
 
 # Configure the database when the module is imported
@@ -26,5 +26,5 @@ __all__ = [
     'initialize_db', 'get_user', 'get_user_by_username', 'add_user', 'validate_user',
     'list_all_users', 'promote_user_to_admin', 'delete_user', 'create_project',
     'get_project', 'close_project', 'add_member_to_project', 'remove_member_from_project',
-    'get_user_managed_projects', 'get_user_member_projects'
+    'get_user_managed_projects', 'get_user_member_projects', 'delete_project'
 ]

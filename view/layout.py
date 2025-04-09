@@ -6,7 +6,8 @@ from flask_login import current_user
 
 from .modals import (
     create_delete_user_modal, create_promote_user_modal,
-    create_project_modal, create_add_member_modal, create_close_project_modal
+    create_project_modal, create_add_member_modal, create_close_project_modal,
+    create_delete_project_modal
 )
 
 # Main app layout
@@ -26,7 +27,8 @@ def get_app_layout():
         create_promote_user_modal(),
         create_project_modal(),
         create_add_member_modal(),
-        create_close_project_modal()
+        create_close_project_modal(),
+        create_delete_project_modal()
     ])
 
 # Home page layout

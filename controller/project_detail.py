@@ -11,7 +11,8 @@ from flask_login import current_user
 
 from model import (
     get_project, add_member_to_project,
-    remove_member_from_project, close_project, list_all_users
+    remove_member_from_project, close_project, list_all_users,
+    delete_project
 )
 
 def register_project_detail_callbacks(app):
@@ -78,16 +79,44 @@ def register_project_detail_callbacks(app):
                 
         return is_open
     
+    # Toggle delete project modal
+    @app.callback(
+        Output('delete-project-modal', 'is_open'),
+        [Input({'type': 'delete-project', 'index': ALL}, 'n_clicks'),
+         Input('confirm-delete-project', 'n_clicks'),
+         Input('cancel-delete-project', 'n_clicks')],
+        [State('delete-project-modal', 'is_open')],
+        prevent_initial_call=True
+    )
+    def toggle_delete_project_modal(delete_clicks, confirm, cancel, is_open):
+        ctx = dash.callback_context
+        if not ctx.triggered:
+            return is_open
+            
+        trigger = ctx.triggered[0]['prop_id'].split('.')[0]
+        
+        if '{' in trigger and '"type":"delete-project"' in trigger:
+            # For pattern matching, check if any clicks have occurred
+            if any(click and click > 0 for click in delete_clicks):
+                return True
+        elif trigger == 'confirm-delete-project' and confirm:
+            return False
+        elif trigger == 'cancel-delete-project' and cancel:
+            return False
+                
+        return is_open
+    
     # Update selected project ID for pattern matching buttons
     @app.callback(
         Output('selected-project-id', 'data', allow_duplicate=True),
         [Input({'type': 'add-member', 'index': ALL}, 'n_clicks'),
          Input({'type': 'close-project', 'index': ALL}, 'n_clicks'),
+         Input({'type': 'delete-project', 'index': ALL}, 'n_clicks'),
          Input({'type': 'remove-member', 'index': ALL}, 'n_clicks')],
         [State('selected-project-id', 'data')],
         prevent_initial_call=True
     )
-    def update_selected_project_id(add_clicks, close_clicks, remove_clicks, current_project_id):
+    def update_selected_project_id(add_clicks, close_clicks, delete_clicks, remove_clicks, current_project_id):
         ctx = dash.callback_context
         if not ctx.triggered:
             return current_project_id
@@ -95,7 +124,7 @@ def register_project_detail_callbacks(app):
         trigger = ctx.triggered[0]['prop_id'].split('.')[0]
         
         # Only process if actually triggered by a click
-        if not any(add_clicks) and not any(close_clicks) and not any(remove_clicks):
+        if not any(add_clicks) and not any(close_clicks) and not any(delete_clicks) and not any(remove_clicks):
             return current_project_id
         
         # Handle add member buttons from project detail page
@@ -119,9 +148,38 @@ def register_project_detail_callbacks(app):
                         return button_data['index']
             except:
                 pass
+                
+        # Handle delete project buttons from project detail page
+        if '{' in trigger and '"type":"delete-project"' in trigger:
+            try:
+                button_data = json.loads(trigger)
+                # Find the index of the button that was clicked
+                for i, click in enumerate(delete_clicks):
+                    if click and click > 0:
+                        return button_data['index']
+            except:
+                pass
         
         # For remove member buttons, we keep the current project ID
         return current_project_id
+        
+    # Delete project callback
+    @app.callback(
+        Output('url', 'pathname', allow_duplicate=True),
+        [Input('confirm-delete-project', 'n_clicks')],
+        [State('selected-project-id', 'data')],
+        prevent_initial_call=True
+    )
+    @db_session
+    def delete_project_callback(n_clicks, project_id):
+        if not n_clicks or not project_id:
+            return dash.no_update
+        
+        # Delete the project and redirect to projects page
+        if delete_project(project_id, current_user.id):
+            return '/projects'
+        
+        return dash.no_update
     
     # Remove member from project
     @app.callback(

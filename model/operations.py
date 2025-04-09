@@ -160,3 +160,20 @@ def get_user_member_projects(user_id):
         return []
     
     return list(user.member_of_projects)
+
+@db_session
+def delete_project(project_id, user_id):
+    """Delete a project (only if user is the manager)"""
+    project = get_project(project_id)
+    user = get_user(user_id)
+    
+    if not project or not user:
+        return False
+    
+    # Only the manager can delete a project
+    if project.manager.id != user.id:
+        return False
+        
+    # Delete the project
+    project.delete()
+    return True

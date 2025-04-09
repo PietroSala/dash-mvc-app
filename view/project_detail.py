@@ -58,7 +58,9 @@ def get_project_detail_layout(project_id):
             dbc.Col([
                 dbc.Button("Back to Projects", href="/projects", color="primary", className="mt-3"),
                 dbc.Button("Close Project", id={"type": "close-project", "index": project_id}, 
-                         color="warning", className="mt-3 ms-2") if project.manager.id == current_user.id and not project.end_date else html.Div()
+                         color="warning", className="mt-3 ms-2") if project.manager.id == current_user.id and not project.end_date else html.Div(),
+                dbc.Button("Delete Project", id={"type": "delete-project", "index": project_id}, 
+                         color="danger", className="mt-3 ms-2") if project.manager.id == current_user.id else html.Div()
             ])
         ]),
         

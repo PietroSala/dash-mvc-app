@@ -9,7 +9,8 @@ from .components import create_user_info_display
 from .navigation import get_navbar
 from .modals import (
     create_delete_user_modal, create_promote_user_modal,
-    create_project_modal, create_add_member_modal, create_close_project_modal
+    create_project_modal, create_add_member_modal, create_close_project_modal,
+    create_delete_project_modal
 )
 
 # Re-export all necessary view functions to maintain compatibility with existing imports
@@ -20,5 +21,5 @@ __all__ = [
     'create_user_info_display', 'create_users_table',
     'create_member_list', 'create_delete_user_modal', 'create_promote_user_modal',
     'create_project_modal', 'create_add_member_modal', 'create_close_project_modal',
-    'create_projects_table'
+    'create_delete_project_modal', 'create_projects_table'
 ]
