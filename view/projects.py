@@ -154,6 +154,12 @@ def get_project_detail_layout(project_id):
             ])
         ]),
         
+        # Hidden buttons for callback compatibility
+        html.Div([
+            dbc.Button('Add Member', id='add-member-button', style={'display': 'none'}),
+            dbc.Button('Close Project', id='close-project-button', style={'display': 'none'})
+        ], style={'display': 'none'}),
+        
         html.Div(id='project-message', className='mt-3')
     ])
 
