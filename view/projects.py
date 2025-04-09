@@ -117,10 +117,17 @@ def get_project_detail_layout(project_id):
         ])
     
     return html.Div([
-        html.H2(project.name),
-        dbc.Badge("Active" if not project.end_date else "Completed", 
-                 color="success" if not project.end_date else "secondary",
-                 className="mb-3"),
+        dbc.Row([
+            dbc.Col([
+                html.H2(project.name, className="d-inline-block me-2"),
+                dbc.Badge("Active" if not project.end_date else "Completed", 
+                        color="success" if not project.end_date else "secondary",
+                        className="mb-3 align-middle")
+            ], width=10),
+            dbc.Col([
+                dbc.Button("Refresh", id="refresh-project-button", color="secondary", className="float-end")
+            ], width=2)
+        ]),
         
         dbc.Row([
             dbc.Col([

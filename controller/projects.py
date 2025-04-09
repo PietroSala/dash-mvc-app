@@ -49,6 +49,25 @@ def register_project_callbacks(app):
             
         return managed_content, member_content
     
+    # Refresh single project view
+    @app.callback(
+        Output('page-content', 'children', allow_duplicate=True),
+        [Input('refresh-project-button', 'n_clicks')],
+        [State('url', 'pathname')],
+        prevent_initial_call=True
+    )
+    @db_session
+    def refresh_project_view(n_clicks, pathname):
+        if not n_clicks or not pathname or not pathname.startswith('/project/'):
+            return dash.no_update
+            
+        try:
+            project_id = int(pathname.split('/')[-1])
+            from view import get_project_detail_layout
+            return get_project_detail_layout(project_id)
+        except:
+            return dash.no_update
+    
     # Enable/disable action buttons based on project selection
     @app.callback(
         [Output('view-project-button', 'disabled'),
