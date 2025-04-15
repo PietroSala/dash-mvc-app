@@ -70,9 +70,12 @@ def get_project_detail_layout(project_id):
                             className="mb-3"
                         ),
                         html.Div([
+                            # Store project_id as a data attribute in save-dot-graph button
                             dbc.Button("Save Changes", id="save-dot-graph", color="primary", className="me-2"),
                             dbc.Button("Generate Graph", id="generate-dot-graph", color="success", className="me-2"),
-                            dbc.Button("Revert to Saved", id="revert-dot-graph", color="warning")
+                            dbc.Button("Revert to Saved", id="revert-dot-graph", color="warning"),
+                            # Add a hidden div with project ID specifically for the DOT editor
+                            html.Div(id="dot-editor-project-id", children=project_id, style={"display": "none"})
                         ]) if project.manager.id == current_user.id else html.Div(),
                         html.Div(id="dot-graph-message", className="mt-2")
                     ])

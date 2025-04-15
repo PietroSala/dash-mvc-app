@@ -214,11 +214,14 @@ def register_project_detail_callbacks(app):
         Output('dot-graph-message', 'children'),
         [Input('save-dot-graph', 'n_clicks')],
         [State('dot-editor', 'value'),
-         State('selected-project-id', 'data')],
+         State('dot-editor-project-id', 'children')],  # Use the dedicated hidden div for project ID
         prevent_initial_call=True
     )
     @db_session
     def save_dot_graph(n_clicks, dot_graph, project_id):
+
+        print(f"Saving DOT graph for project {project_id} by user {current_user.id} with graph: {dot_graph}")
+
         if not n_clicks or not project_id:
             return dash.no_update
             
@@ -231,7 +234,7 @@ def register_project_detail_callbacks(app):
     @app.callback(
         Output('dot-editor', 'value'),
         [Input('revert-dot-graph', 'n_clicks')],
-        [State('selected-project-id', 'data')],
+        [State('dot-editor-project-id', 'children')],  # Use the dedicated hidden div
         prevent_initial_call=True
     )
     @db_session
@@ -331,7 +334,7 @@ def register_project_detail_callbacks(app):
         Output('dot-graph-visualization', 'children', allow_duplicate=True),
         [Input('save-dot-graph', 'n_clicks'),
          Input('refresh-project-button', 'n_clicks')],
-        [State('selected-project-id', 'data')],
+        [State('dot-editor-project-id', 'children')],  # Use the dedicated hidden div
         prevent_initial_call=True
     )
     @db_session
